@@ -2,6 +2,8 @@
 #include<stdlib.h>
 #include<string.h>
 #include<stdbool.h>
+#include<malloc.h>
+#include <time.h>
 
 //Declarar estructuras
 struct Carta;
@@ -16,24 +18,27 @@ struct Carta {
 
 struct Player {
 	char name[50];
-	struct Carta mazo;
+	struct Carta* mazo;
 	int hp;
 };
 
 //Declarar funciones
 struct Carta* CrearCarta(char[], char[], char[], int, int, int);
+struct Carta* SacarCartaMazo(struct Carta*);
 struct Player* CrearJugador(char[]);
+void AnadirCartaMazo(struct Carta**, struct Carta*);
 void PrintCarta(struct Carta*);
+void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas);
 
 
 int main() {
+	srand(time(NULL));
 
 	// --SECCION DE CODIGO EDITABLE-- //
 
-	char file_path[50] = "cards.csv";
+	char file_path[200] = "cards.csv";
 
 	//_______________________________//
-	 
 
 	//Abre el archivo .csv
 	FILE* file;
@@ -50,11 +55,30 @@ int main() {
 	{
 		int read = 0;
 		int records = 0;
-		//Crear Mazo
 
-
+		//Crear Mazos
+		struct Carta* mazo = NULL;
+		char line[200];
+		char name[50], desc[200], class[50];
+		int hp, ap, dp;
+		//Leer cartas desde el archivo
+		fgets(line, 200, file);
+		while (fgets(line, 200, file))
+		{
+			strcpy(name, strtok(line, ";"));
+			strcpy(desc, strtok(NULL, ";"));
+			strcpy(class, strtok(NULL, ";"));
+			hp = atoi(strtok(NULL, ";"));
+			ap = atoi(strtok(NULL, ";"));
+			dp = atoi(strtok(NULL, ";"));
+			AnadirCartaMazo(&mazo, CrearCarta(name, desc, class, hp, ap, dp));
+		}
+		//Repartir Cartas
+		struct Carta* mazo1 = NULL;
+		struct Carta* mazo2 = NULL;
+		RepartirCartas(mazo, &mazo1, &mazo2, 15);
 		//Ingresar Jugador
-		printf("Bienvenido jugador");
+		printf("\nBienvenido jugador");
 		printf("\nEscriba su nombre: ");
 		char nameplayer[50];
 		gets(nameplayer);
@@ -64,15 +88,16 @@ int main() {
 		//Ingresar Bot
 		struct Player* Bot = CrearJugador("Bot");
 
-
 		//Fin del juego
+		fclose(file);
+		
 		do
 		{
 			printf("\n¿Quieres volver a jugar?");
 			printf("\n1- Si");
 			printf("\n2- No");
 			printf("\nEleccion: ");
-			scanf("%i",&elec);
+			scanf("%i", &elec);
 			if (elec == 1) {
 				game = true;
 			}
@@ -97,18 +122,33 @@ struct Carta* CrearCarta(char name[], char desc[], char class[], int hp, int ap,
 		carta->dp = dp;
 		carta->next = NULL;
 	}
-
 	return carta;
 }
 
-void AnadirCartaMazo(struct Carta* mazo, struct Carta* carta) {
-	mazo->next = carta;
+//Añade una carta a un mazo (PUSH)
+void AnadirCartaMazo(struct Carta** mazo, struct Carta* carta) {
+	if (*mazo == NULL) {
+		carta->next = NULL;
+		*mazo = carta;
+	}
+	else {
+		carta->next = *mazo;
+		*mazo = carta;
+	}
 }
 
-void PrintCarta(struct Carta* carta) {
-	printf("\nCarta: %s",carta->name);
+//Saca una carta de la pila (POP)
+struct Carta* SacarCartaMazo(struct Carta** mazo) {
+	struct Carta* carta = NULL;
+	if (*mazo != NULL) {
+		carta = *mazo;
+		*mazo = (*mazo)->next;
+		carta->next = NULL;
+	}
+	return carta;
 }
 
+//Crea un jugador
 struct Player* CrearJugador(char name[]) {
 	struct Player* jugador = malloc(sizeof(struct Player));
 	if (jugador != NULL) {
@@ -116,4 +156,51 @@ struct Player* CrearJugador(char name[]) {
 		jugador->hp = 5;
 	}
 	return jugador;
+}
+
+//Contar cartas
+int ContarCartas(struct Carta* mazo) {
+	struct Carta* current = mazo;
+	int count = 0;
+	while (current != NULL) {
+		count++;
+		current = current->next;
+	}
+	return count;
+}
+
+//Repartir Cartas
+void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas) {
+
+	int cartasRepartidas = 0;
+	while (mazo != NULL && cartasRepartidas < maxCartas) {
+		int numeroCartas = ContarCartas(mazo);
+		int cartaElegida = rand() % numeroCartas;
+
+		struct Carta* carta = mazo;
+		struct Carta* cartaAnterior = NULL;
+		while (cartaElegida > 0) {
+			cartaAnterior = carta;
+			carta = carta->next;
+			cartaElegida--;
+		}
+
+		if (cartaAnterior == NULL) {
+			mazo = carta->next;
+		}
+		else {
+			cartaAnterior->next = carta->next;
+		}
+
+		carta->next = NULL;
+
+		if (cartasRepartidas % 2 == 0) {
+			AnadirCartaMazo(mazo1, carta);
+		}
+		else {
+			AnadirCartaMazo(mazo2, carta);
+		}
+
+		cartasRepartidas++;
+	}
 }

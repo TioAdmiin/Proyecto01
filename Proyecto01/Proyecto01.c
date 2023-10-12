@@ -72,7 +72,7 @@ int main() {
 			printf("\n1- Si");
 			printf("\n2- No");
 			printf("\nEleccion: ");
-			scanf("%i", &elec);
+			scanf("%i",&elec);
 			if (elec == 1) {
 				game = true;
 			}
@@ -100,7 +100,6 @@ struct Carta* CrearCarta(char name[], char desc[], char class[], int hp, int ap,
 
 	return carta;
 }
-
 
 void AnadirCartaMazo(struct Carta* mazo, struct Carta* carta) {
 	mazo->next = carta;

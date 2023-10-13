@@ -24,13 +24,27 @@ struct Player {
 };
 
 //Declarar funciones
-struct Carta* CrearCarta(char[], char[], char[], int, int, int);
+int ContarCartas(struct Carta*);
 struct Carta* SacarCartaMazo(struct Carta**);
 struct Player* CrearJugador(char[]);
-void LimpiarMazo(struct Carta**);
 void AnadirCartaMazo(struct Carta**, struct Carta*);
 void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas);
+void LimpiarMazo(struct Carta**);
 
+//Crear Carta
+struct Carta* CrearCarta(char name[], char desc[], char class[], int hp, int ap, int dp) {
+	struct Carta* carta = malloc(sizeof(struct Carta));
+	if (carta != NULL) {
+		strcpy(carta->name, name);
+		strcpy(carta->desc, desc);
+		strcpy(carta->class, class);
+		carta->hp = hp;
+		carta->ap = ap;
+		carta->dp = dp;
+		carta->next = NULL;
+	}
+	return carta;
+}
 
 int main() {
 	srand((unsigned int)time(NULL));
@@ -39,20 +53,20 @@ int main() {
 	char file_path[200];
 	strcpy(file_path, "cards.csv");
 
-	//Abre el archivo .csv
-	FILE* file;
-	file = fopen(file_path, "r");
-	if (file == NULL) {
-		printf("Error: No se ha podido abrir el archivo.");
-		return 1;
-	}
-
 	//Abre el loop de juego
 	bool game = true;
 	int elec;
 	do
 	{
 		int NofScannedArguments = 0; //Evitar warning fscan
+
+		//Abre el archivo .csv
+		FILE* file;
+		file = fopen(file_path, "r");
+		if (file == NULL) {
+			printf("Error: No se ha podido abrir el archivo.");
+			return 1;
+		}
 
 		//Crear Mazos
 		struct Carta* mazo = NULL;
@@ -77,13 +91,14 @@ int main() {
 		//Repartir Cartas
 		struct Carta* mazo1 = NULL;
 		struct Carta* mazo2 = NULL;
-		RepartirCartas(mazo, &mazo1, &mazo2, 15);
+		RepartirCartas(mazo, &mazo1, &mazo2, 15*2);
+		mazo = NULL;
 
 		//Ingresar Jugador
 		printf("Bienvenido jugador");
 		printf("\nEscriba su nombre: ");
 		char nameplayer[50];
-		scanf(" %[^\n]s", nameplayer);
+		NofScannedArguments = (int) scanf(" %[^\n]s", nameplayer);
 		struct Player* Jugador = CrearJugador(nameplayer);
 		fflush(stdin);
 		printf("Jugador: %s", Jugador->name);
@@ -94,9 +109,9 @@ int main() {
 		//Fin del juego
 		free(Jugador);
 		free(Bot);
-		LimpiarMazo(mazo);
-		LimpiarMazo(mazo1);
-		LimpiarMazo(mazo2);
+		free(mazo);
+		LimpiarMazo(&mazo2);
+		LimpiarMazo(&mazo1);
 		do
 		{
 			printf("\n¿Quieres volver a jugar?");
@@ -113,22 +128,6 @@ int main() {
 		} while (elec != 1 && elec != 2);
 	} while (game);
 	return 0;
-}
-
-
-//Crear Carta
-struct Carta* CrearCarta(char name[], char desc[], char class[], int hp, int ap, int dp) {
-	struct Carta* carta = malloc(sizeof(struct Carta));
-	if (carta != NULL) {
-		strcpy(carta->name, name);
-		strcpy(carta->desc, desc);
-		strcpy(carta->class, class);
-		carta->hp = hp;
-		carta->ap = ap;
-		carta->dp = dp;
-		carta->next = NULL;
-	}
-	return carta;
 }
 
 //Añade una carta a un mazo (PUSH)
@@ -175,6 +174,14 @@ int ContarCartas(struct Carta* mazo) {
 		current = current->next;
 	}
 	return count;
+}
+
+//LimpiarMazo
+void LimpiarMazo(struct Carta** mazo) {
+	while (*mazo != NULL) {
+		struct Carta* carta = SacarCartaMazo(mazo);
+		free(carta);
+	}
 }
 
 //Repartir Cartas

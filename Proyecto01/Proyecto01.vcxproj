@@ -129,6 +129,9 @@
   <ItemGroup>
     <ClCompile Include="Proyecto01.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="cards.csv" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

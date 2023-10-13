@@ -27,6 +27,7 @@ struct Player {
 struct Carta* CrearCarta(char[], char[], char[], int, int, int);
 struct Carta* SacarCartaMazo(struct Carta**);
 struct Player* CrearJugador(char[]);
+void LimpiarMazo(struct Carta**);
 void AnadirCartaMazo(struct Carta**, struct Carta*);
 void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas);
 
@@ -71,6 +72,7 @@ int main() {
 			dp = atoi(strtok(NULL, ";"));
 			AnadirCartaMazo(&mazo, CrearCarta(name, desc, class, hp, ap, dp));
 		}
+		fclose(file);
 
 		//Repartir Cartas
 		struct Carta* mazo1 = NULL;
@@ -81,16 +83,20 @@ int main() {
 		printf("Bienvenido jugador");
 		printf("\nEscriba su nombre: ");
 		char nameplayer[50];
-		fgets(nameplayer, 50, stdin);
+		scanf(" %[^\n]s", nameplayer);
 		struct Player* Jugador = CrearJugador(nameplayer);
+		fflush(stdin);
 		printf("Jugador: %s", Jugador->name);
 
 		//Ingresar Bot
 		struct Player* Bot = CrearJugador("Bot");
 
 		//Fin del juego
-		fclose(file);
-		
+		free(Jugador);
+		free(Bot);
+		LimpiarMazo(mazo);
+		LimpiarMazo(mazo1);
+		LimpiarMazo(mazo2);
 		do
 		{
 			printf("\n¿Quieres volver a jugar?");
@@ -144,8 +150,9 @@ struct Carta* SacarCartaMazo(struct Carta** mazo) {
 		carta = *mazo;
 		*mazo = (*mazo)->next;
 		carta->next = NULL;
+		return carta;
 	}
-	return carta;
+	return NULL;
 }
 
 //Crea un jugador
@@ -154,6 +161,7 @@ struct Player* CrearJugador(char name[]) {
 	if (jugador != NULL) {
 		strcpy(jugador->name, name);
 		jugador->hp = 5;
+		jugador->mazo = NULL;
 	}
 	return jugador;
 }

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -24,21 +25,18 @@ struct Player {
 
 //Declarar funciones
 struct Carta* CrearCarta(char[], char[], char[], int, int, int);
-struct Carta* SacarCartaMazo(struct Carta*);
+struct Carta* SacarCartaMazo(struct Carta**);
 struct Player* CrearJugador(char[]);
 void AnadirCartaMazo(struct Carta**, struct Carta*);
-void PrintCarta(struct Carta*);
 void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas);
 
 
 int main() {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	// --SECCION DE CODIGO EDITABLE-- //
-
-	char file_path[200] = "cards.csv";
-
-	//_______________________________//
+	char file_path[200];
+	strcpy(file_path, "cards.csv");
 
 	//Abre el archivo .csv
 	FILE* file;
@@ -53,14 +51,14 @@ int main() {
 	int elec;
 	do
 	{
-		int read = 0;
-		int records = 0;
+		int NofScannedArguments = 0; //Evitar warning fscan
 
 		//Crear Mazos
 		struct Carta* mazo = NULL;
 		char line[200];
 		char name[50], desc[200], class[50];
 		int hp, ap, dp;
+
 		//Leer cartas desde el archivo
 		fgets(line, 200, file);
 		while (fgets(line, 200, file))
@@ -73,15 +71,17 @@ int main() {
 			dp = atoi(strtok(NULL, ";"));
 			AnadirCartaMazo(&mazo, CrearCarta(name, desc, class, hp, ap, dp));
 		}
+
 		//Repartir Cartas
 		struct Carta* mazo1 = NULL;
 		struct Carta* mazo2 = NULL;
 		RepartirCartas(mazo, &mazo1, &mazo2, 15);
+
 		//Ingresar Jugador
-		printf("\nBienvenido jugador");
+		printf("Bienvenido jugador");
 		printf("\nEscriba su nombre: ");
 		char nameplayer[50];
-		gets(nameplayer);
+		fgets(nameplayer, 50, stdin);
 		struct Player* Jugador = CrearJugador(nameplayer);
 		printf("Jugador: %s", Jugador->name);
 
@@ -97,7 +97,7 @@ int main() {
 			printf("\n1- Si");
 			printf("\n2- No");
 			printf("\nEleccion: ");
-			scanf("%i", &elec);
+			NofScannedArguments = (int) scanf("%i", &elec);
 			if (elec == 1) {
 				game = true;
 			}

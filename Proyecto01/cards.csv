@@ -1,4 +1,17 @@
-Name;Desc;Class;hp;ap;dp;
-Daniel;El programador;Necromancer;1;2;3;
-Gabriel;Documentarista;Necromancer;2;3;4;
-Miguel;asd1;asd;3;4;5;
+Name;Desc;Class;hp;ap;dp
+Daniel;El programador;Necromancer;1;2;3
+Gabriel;Documentarista;Necromancer;2;3;4
+Miguel;asd1;Necromancer;3;4;5
+Aaron;El programador;Necromancer;4;1;2
+Nelly;Documentarista;Necromancer;5;5;34
+Gaboo;asd1;Necromancer;6;6;5
+Ana;El programador;Necromancer;7;5;6
+Matias;Documentarista;Necromancer;8;7;7
+Rodrigo;asd1;Necromancer;9;2;8
+Margot;El programador;Necromancer;10;4;4
+Roberto;Documentarista;Necromancer;11;5;3
+Sebastian;asd1;Necromancer;12;6;1
+Claudio;El programador;Necromancer;13;7;5
+Marcos;El programador;Necromancer;14;8;7
+Somebody;Documentarista;Necromancer;15;34;8
+Nacho;asd1;Necromancer;16;2;9

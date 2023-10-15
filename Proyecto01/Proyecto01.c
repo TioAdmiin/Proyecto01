@@ -20,6 +20,7 @@ struct Carta {
 struct Player {
 	char name[50];
 	struct Carta* mazo;
+	struct Carta* mano[3];
 	int hp;
 };
 
@@ -30,6 +31,8 @@ struct Player* CrearJugador(char[]);
 void AnadirCartaMazo(struct Carta**, struct Carta*);
 void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas);
 void LimpiarMazo(struct Carta**);
+void Turno(struct Player*);
+void TurnoBot(struct Player*);
 
 //Crear Carta
 struct Carta* CrearCarta(char name[], char desc[], char class[], int hp, int ap, int dp) {
@@ -48,10 +51,10 @@ struct Carta* CrearCarta(char name[], char desc[], char class[], int hp, int ap,
 
 int main() {
 	srand((unsigned int)time(NULL));
+	char file_path[200];
 
 	// --SECCION DE CODIGO EDITABLE-- //
-	char file_path[200];
-	strcpy(file_path, "cards.csv");
+	strcpy(file_path, "cards.csv"); //Remplazar "cards.csv" por la dirección donde guarde sus cartas
 
 	//Abre el loop de juego
 	bool game = true;
@@ -88,12 +91,6 @@ int main() {
 		}
 		fclose(file);
 
-		//Repartir Cartas
-		struct Carta* mazo1 = NULL;
-		struct Carta* mazo2 = NULL;
-		RepartirCartas(mazo, &mazo1, &mazo2, 15*2);
-		mazo = NULL;
-
 		//Ingresar Jugador
 		printf("Bienvenido jugador");
 		printf("\nEscriba su nombre: ");
@@ -105,6 +102,42 @@ int main() {
 
 		//Ingresar Bot
 		struct Player* Bot = CrearJugador("Bot");
+
+		//Repartir Cartas
+		struct Carta* mazo1 = NULL;
+		struct Carta* mazo2 = NULL;
+		RepartirCartas(mazo, &mazo1, &mazo2, 15);
+		mazo = NULL;
+		Jugador->mazo = mazo1;
+		Bot->mazo = mazo2;
+
+		//Añadir Cartas del mazo a la Mano
+		for (int i = 0; i < 3; i++)
+		{
+			AnadirCartaMazo(&Jugador->mano[i], SacarCartaMazo(&Jugador->mazo));
+			AnadirCartaMazo(&Bot->mano[i], SacarCartaMazo(&Bot->mazo));
+		}
+
+		//Preparar campo de batalla
+		struct Carta* battlefield1 = NULL;
+		struct Carta* battlefield2 = NULL;
+
+		//Gameplay
+		int turno = rand() % 2;
+		system("cls");
+		do
+		{	
+			//Mostrar campo de batalla
+			for (int i = 0; i < ContarCartas(battlefield1); i++)
+			{
+				printf("__________ ");
+			}
+			printf("\n");
+			for (int i = 0; i < ContarCartas(battlefield1); i++)
+			{
+				printf("|        | ");
+			}
+		} while (Jugador->hp > 0 && Bot->hp > 0);
 
 		//Fin del juego
 		free(Jugador);
@@ -161,6 +194,10 @@ struct Player* CrearJugador(char name[]) {
 		strcpy(jugador->name, name);
 		jugador->hp = 5;
 		jugador->mazo = NULL;
+		for (int i = 0; i < 3; i++)
+		{
+			jugador->mano[i] = NULL;
+		}
 	}
 	return jugador;
 }
@@ -188,10 +225,9 @@ void LimpiarMazo(struct Carta** mazo) {
 void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas) {
 
 	int cartasRepartidas = 0;
-	while (mazo != NULL && cartasRepartidas < maxCartas) {
+	while (mazo != NULL && cartasRepartidas < maxCartas * 2) {
 		int numeroCartas = ContarCartas(mazo);
 		int cartaElegida = rand() % numeroCartas;
-
 		struct Carta* carta = mazo;
 		struct Carta* cartaAnterior = NULL;
 		while (cartaElegida > 0) {
@@ -199,23 +235,31 @@ void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** maz
 			carta = carta->next;
 			cartaElegida--;
 		}
-
 		if (cartaAnterior == NULL) {
 			mazo = carta->next;
 		}
 		else {
 			cartaAnterior->next = carta->next;
 		}
-
 		carta->next = NULL;
-
 		if (cartasRepartidas % 2 == 0) {
 			AnadirCartaMazo(mazo1, carta);
 		}
 		else {
 			AnadirCartaMazo(mazo2, carta);
 		}
-
 		cartasRepartidas++;
 	}
+}
+
+void Turno(struct Player* player) {
+	
+}
+
+void TurnoBot(struct Player* player) {
+
+}
+
+void Atacar(struct Carta* atacante, struct Carta* defensor) {
+
 }

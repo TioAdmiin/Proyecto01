@@ -32,8 +32,8 @@ struct Carta* ObtenerCarta(struct Carta**, int);
 void AnadirCartaMazo(struct Carta**, struct Carta*);
 void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas);
 void LimpiarMazo(struct Carta**);
-void Turno(struct Player*, struct Carta**, struct Carta**);
-void TurnoBot(struct Player*, struct Carta*, struct Carta*);
+void Turno(struct Player*, struct Carta**, struct Carta**, struct Player**);
+void TurnoBot(struct Player*, struct Carta**, struct Carta**, struct Player**);
 void MostrarCampo(struct Carta*);
 void MostrarMano(struct Carta*);
 void Atacar(struct Carta**, struct Carta**);
@@ -128,8 +128,13 @@ int main() {
 
 		//Gameplay
 		int turno = rand() % 2;
+		bool juego = true;
 		do
 		{
+			
+			if (Jugador->hp == 0 | Bot->hp == 0) {
+				juego = false;
+			}
 			system("cls");
 			printf("CAMPO DE BATALLA ENEMIGO:\n");
 			MostrarCampo(battlefield1);
@@ -146,7 +151,7 @@ int main() {
 				TurnoBot(Bot, &battlefield1, &battlefield2, &Jugador);
 			}
 			turno++;
-		} while (Jugador->hp > 0 && Bot->hp > 0);
+		} while (juego);
 
 		//Fin del juego
 		free(Jugador);
@@ -264,6 +269,7 @@ void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** maz
 void Turno(struct Player* player, struct Carta** campo, struct Carta** campoenemigo, struct Player** bot) {
 	int elec;
 	int nowarning;
+	bool atacado = false, dejado = false;
 	do
 	{
 		if ((*bot)->hp <= 0) {
@@ -274,55 +280,67 @@ void Turno(struct Player* player, struct Carta** campo, struct Carta** campoenem
 		printf("ES TU TURNO:\nEscoge una accion:\n1)Dejar una carta en el campo de batalla.\n2)Atacar\n3)Terminar Turno\nEleccion: ");
 		nowarning = (int) scanf(" %i", &elec);
 		if (elec == 1) {
-			if (ContarCartas(player->mano) != 0) {
-				int selec = -1;
-				MostrarMano(player->mano);
-				printf("0) Cancelar\n\n");
-				do
-				{
-					printf("Escoge una carta:\n");
-					nowarning = scanf(" %i", &selec);
-				} while (selec < 0 || selec > ContarCartas(player->mano));
-				if (selec !=0) {
-					AnadirCartaMazo(campo, ObtenerCarta(&player->mano, selec));
-				}
-				system("cls");
-				printf("CAMPO DE BATALLA ENEMIGO:\n\n");
-				MostrarCampo(*campoenemigo);
-				printf("-------------------------------------------------\n\n");
-				printf("CAMPO DE BATALLA ALIADO:\n\n");
-				MostrarCampo(*campo);
-				printf("-------------------------------------------------\n");
+			if (dejado) {
+				printf("Ya dejaste una carta\n");
 			}
 			else {
-				printf("No tienes cartas en tu mano\n");
+				if (ContarCartas(player->mano) != 0) {
+					int selec = -1;
+					MostrarMano(player->mano);
+					printf("0) Cancelar\n\n");
+					do
+					{
+						printf("Escoge una carta:\n");
+						nowarning = scanf(" %i", &selec);
+					} while (selec < 0 || selec > ContarCartas(player->mano));
+					if (selec != 0) {
+						AnadirCartaMazo(campo, ObtenerCarta(&player->mano, selec));
+						dejado = true;
+					}
+					system("cls");
+					printf("CAMPO DE BATALLA ENEMIGO:\n\n");
+					MostrarCampo(*campoenemigo);
+					printf("-------------------------------------------------\n\n");
+					printf("CAMPO DE BATALLA ALIADO:\n\n");
+					MostrarCampo(*campo);
+					printf("-------------------------------------------------\n");
+				}
+				else {
+					printf("No tienes cartas en tu mano\n");
+				}
 			}
 		}
 		if (elec == 2) {
-			int selecc = -1;
-			int selecc2 = -1;
-			if (ContarCartas(*campo) != 0) {
-				MostrarMano(*campo);
-				do
-				{
-					printf("Escoge una carta: ");
-					nowarning = scanf(" %i", &selecc);
-				} while (selecc < 0 || selecc > ContarCartas(*campo));
-				if (ContarCartas(*campoenemigo) == 0) {
-					(*bot)->hp--;
-				}
-				else {
-					ContarCartas(*campo);
-					MostrarMano(*campoenemigo);
-					do
-					{
-						printf("Escoge una carta para atacar: ");
-						nowarning = scanf(" %i", &selecc2);
-					} while (selecc2 < 0 || selecc2 > ContarCartas(*campoenemigo));
-				}
+			if (atacado) {
+				printf("Ya atacaste este turno.\n");
 			}
 			else {
-				printf("No hay cartas en el mazo de batalla\n");
+				int selecc = -1;
+				int selecc2 = -1;
+				if (ContarCartas(*campo) != 0) {
+					MostrarMano(*campo);
+					do
+					{
+						printf("Escoge una carta: ");
+						nowarning = scanf(" %i", &selecc);
+					} while (selecc < 0 || selecc > ContarCartas(*campo));
+					atacado = true;
+					if (ContarCartas(*campoenemigo) == 0) {
+						(*bot)->hp--;
+					}
+					else {
+						ContarCartas(*campo);
+						MostrarMano(*campoenemigo);
+						do
+						{
+							printf("Escoge una carta para atacar: ");
+							nowarning = scanf(" %i", &selecc2);
+						} while (selecc2 < 0 || selecc2 > ContarCartas(*campoenemigo));
+					}
+				}
+				else {
+					printf("No hay cartas en el mazo de batalla\n");
+				}
 			}
 		}
 	} while (elec != 3);
@@ -337,7 +355,6 @@ void TurnoBot(struct Player* player, struct Carta** campo, struct Carta** campoe
 	}
 	else {
 		//Ataca a la carta con menor vida + defensa
-		int salud = 9999999999;
 		Atacar(campo, campoenemigo);
 	}
 }

@@ -20,7 +20,7 @@ struct Carta {
 struct Player {
 	char name[50];
 	struct Carta* mazo;
-	struct Carta* mano[3];
+	struct Carta* mano;
 	int hp;
 };
 
@@ -28,11 +28,15 @@ struct Player {
 int ContarCartas(struct Carta*);
 struct Carta* SacarCartaMazo(struct Carta**);
 struct Player* CrearJugador(char[]);
+struct Carta* ObtenerCarta(struct Carta**, int);
 void AnadirCartaMazo(struct Carta**, struct Carta*);
 void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** mazo2, int maxCartas);
 void LimpiarMazo(struct Carta**);
-void Turno(struct Player*);
-void TurnoBot(struct Player*);
+void Turno(struct Player*, struct Carta**, struct Carta**);
+void TurnoBot(struct Player*, struct Carta*, struct Carta*);
+void MostrarCampo(struct Carta*);
+void MostrarMano(struct Carta*);
+void Atacar(struct Carta**, struct Carta**);
 
 //Crear Carta
 struct Carta* CrearCarta(char name[], char desc[], char class[], int hp, int ap, int dp) {
@@ -114,8 +118,8 @@ int main() {
 		//Añadir Cartas del mazo a la Mano
 		for (int i = 0; i < 3; i++)
 		{
-			AnadirCartaMazo(&Jugador->mano[i], SacarCartaMazo(&Jugador->mazo));
-			AnadirCartaMazo(&Bot->mano[i], SacarCartaMazo(&Bot->mazo));
+			AnadirCartaMazo(&Jugador->mano, SacarCartaMazo(&Jugador->mazo));
+			AnadirCartaMazo(&Bot->mano, SacarCartaMazo(&Bot->mazo));
 		}
 
 		//Preparar campo de batalla
@@ -124,19 +128,24 @@ int main() {
 
 		//Gameplay
 		int turno = rand() % 2;
-		system("cls");
 		do
-		{	
-			//Mostrar campo de batalla
-			for (int i = 0; i < ContarCartas(battlefield1); i++)
-			{
-				printf("__________ ");
+		{
+			system("cls");
+			printf("CAMPO DE BATALLA ENEMIGO:\n");
+			MostrarCampo(battlefield1);
+			printf("-------------------------------------------------\n");
+			printf("CAMPO DE BATALLA ALIADO:\n");
+			MostrarCampo(battlefield2);
+			printf("-------------------------------------------------\n");
+			if (turno % 2 == 0) {
+				AnadirCartaMazo(&Jugador->mano, SacarCartaMazo(&Jugador->mazo));
+				Turno(Jugador, &battlefield2, &battlefield1, &Bot);
 			}
-			printf("\n");
-			for (int i = 0; i < ContarCartas(battlefield1); i++)
-			{
-				printf("|        | ");
+			else {
+				AnadirCartaMazo(&Bot->mano, SacarCartaMazo(&Bot->mazo));
+				TurnoBot(Bot, &battlefield1, &battlefield2, &Jugador);
 			}
+			turno++;
 		} while (Jugador->hp > 0 && Bot->hp > 0);
 
 		//Fin del juego
@@ -165,6 +174,9 @@ int main() {
 
 //Añade una carta a un mazo (PUSH)
 void AnadirCartaMazo(struct Carta** mazo, struct Carta* carta) {
+	if (carta == NULL) {
+		return;
+	}
 	if (*mazo == NULL) {
 		carta->next = NULL;
 		*mazo = carta;
@@ -194,10 +206,7 @@ struct Player* CrearJugador(char name[]) {
 		strcpy(jugador->name, name);
 		jugador->hp = 5;
 		jugador->mazo = NULL;
-		for (int i = 0; i < 3; i++)
-		{
-			jugador->mano[i] = NULL;
-		}
+		jugador->mano = NULL;
 	}
 	return jugador;
 }
@@ -252,14 +261,196 @@ void RepartirCartas(struct Carta* mazo, struct Carta** mazo1, struct Carta** maz
 	}
 }
 
-void Turno(struct Player* player) {
-	
+void Turno(struct Player* player, struct Carta** campo, struct Carta** campoenemigo, struct Player** bot) {
+	int elec;
+	int nowarning;
+	do
+	{
+		if ((*bot)->hp <= 0) {
+			system("cls");
+			printf("FELICIDADES, HAS GANADO!\n");
+			return;
+		}
+		printf("ES TU TURNO:\nEscoge una accion:\n1)Dejar una carta en el campo de batalla.\n2)Atacar\n3)Terminar Turno\nEleccion: ");
+		nowarning = (int) scanf(" %i", &elec);
+		if (elec == 1) {
+			if (ContarCartas(player->mano) != 0) {
+				int selec = -1;
+				MostrarMano(player->mano);
+				printf("0) Cancelar\n\n");
+				do
+				{
+					printf("Escoge una carta:\n");
+					nowarning = scanf(" %i", &selec);
+				} while (selec < 0 || selec > ContarCartas(player->mano));
+				if (selec !=0) {
+					AnadirCartaMazo(campo, ObtenerCarta(&player->mano, selec));
+				}
+				system("cls");
+				printf("CAMPO DE BATALLA ENEMIGO:\n\n");
+				MostrarCampo(*campoenemigo);
+				printf("-------------------------------------------------\n\n");
+				printf("CAMPO DE BATALLA ALIADO:\n\n");
+				MostrarCampo(*campo);
+				printf("-------------------------------------------------\n");
+			}
+			else {
+				printf("No tienes cartas en tu mano\n");
+			}
+		}
+		if (elec == 2) {
+			int selecc = -1;
+			int selecc2 = -1;
+			if (ContarCartas(*campo) != 0) {
+				MostrarMano(*campo);
+				do
+				{
+					printf("Escoge una carta: ");
+					nowarning = scanf(" %i", &selecc);
+				} while (selecc < 0 || selecc > ContarCartas(*campo));
+				if (ContarCartas(*campoenemigo) == 0) {
+					(*bot)->hp--;
+				}
+				else {
+					ContarCartas(*campo);
+					MostrarMano(*campoenemigo);
+					do
+					{
+						printf("Escoge una carta para atacar: ");
+						nowarning = scanf(" %i", &selecc2);
+					} while (selecc2 < 0 || selecc2 > ContarCartas(*campoenemigo));
+				}
+			}
+			else {
+				printf("No hay cartas en el mazo de batalla\n");
+			}
+		}
+	} while (elec != 3);
 }
 
-void TurnoBot(struct Player* player) {
-
+void TurnoBot(struct Player* player, struct Carta** campo, struct Carta** campoenemigo, struct Player** enemigo) {
+	//Primero deja una carta en el campo
+	AnadirCartaMazo(campo, player->mano);
+	//Luego ataca con la carta que deja
+	if (ContarCartas(*campoenemigo) == 0) {
+		(*enemigo)->hp--;
+	}
+	else {
+		//Ataca a la carta con menor vida + defensa
+		int salud = 9999999999;
+		Atacar(campo, campoenemigo);
+	}
 }
 
-void Atacar(struct Carta* atacante, struct Carta* defensor) {
+//Mostrar Campo de batalla
+void MostrarCampo(struct Carta* campo) {
+	//Mostrar campo de batalla
+	if (campo == NULL) {
+		printf("El campo de batalla esta vacio.\n\n");
+		return;
+	}
+	int contador = 1;
+	struct Carta* current = campo;
+	while (current != NULL) {
+		printf("%i) %s: %s - [HP: %i|AP: %i|DP: %i]\n", contador, current->name, current->class, current->hp, current->ap, current->dp);
+		printf("%s\n\n", current->desc);
+		current = current->next;
+		contador++;
+	}
+}
 
+//Mostrar las cartas de la mano del juegador
+void MostrarMano(struct Carta* mano) {
+	printf("TU MANO:\n");
+	int contador = 1;
+	if (ContarCartas(mano) == 0) {
+		printf("No quedan cartas en tu mano\n");
+		return;
+	}
+	struct Carta* current = mano;
+	while (current != NULL) {
+		printf("%i) %s: %s - [HP: %i|AP: %i|DP: %i]\n", contador, current->name, current->class, current->hp, current->ap, current->dp);
+		printf("\"%s\"\n\n", current->desc);
+		current = current->next;
+		contador++;
+	}
+}
+
+//Eliminar una carta con un indice
+void EliminarCarta(struct Carta** mano, int indice) {
+	if (*mano == NULL) {
+		return;
+	}
+	if (indice == 1) {
+		struct Carta* temp = *mano;
+		*mano = (*mano)->next;
+		free(temp);
+		return;
+	}
+	struct Carta* prev = *mano;
+	struct Carta* current = (*mano)->next;
+	int i = 2;
+	while (current != NULL && i < indice) {
+		prev = current;
+		current = current->next;
+		i++;
+	}
+	if (current == NULL) {
+		return;
+	}
+	prev->next = current->next;
+	free(current);
+}
+
+//Sacar una carta con un indice
+struct Carta* ObtenerCarta(struct Carta** mano, int indice) {
+	if (*mano == NULL) {
+		return NULL;
+	}
+	if (indice == 1) {
+		struct Carta* temp = *mano;
+		*mano = (*mano)->next;
+		temp->next = NULL;
+		return temp;
+	}
+	struct Carta* prev = *mano;
+	struct Carta* current = (*mano)->next;
+	int i = 2;
+	while (current != NULL && i < indice) {
+		prev = current;
+		current = current->next;
+		i++;
+	}
+	if (current == NULL) {
+		return NULL;
+	}
+	prev->next = current->next;
+	current->next = NULL;
+	return current;
+}
+
+//Obtener una carta con un indice
+struct Carta* SelecCarta(struct Carta* campo, int indice) {
+	if (campo == NULL) {
+		return NULL;
+	}
+	struct Carta* current = campo;
+	int i = 1;
+	while (current != NULL && i < indice) {
+		current = current->next;
+		i++;
+	}
+	if (current == NULL) {
+		return NULL;
+	}
+	return current;
+}
+
+void Atacar(struct Carta** atacante, struct Carta** defensor) {
+	if (*atacante == NULL || *defensor == NULL) {
+		return;
+	}
+	if ((*atacante)->ap > (*defensor)->dp) {
+		(*defensor)->hp -= (*atacante)->ap - (*defensor)->dp;
+	}
 }
